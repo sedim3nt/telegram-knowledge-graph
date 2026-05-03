@@ -32,13 +32,35 @@
 }
 */
 
-/* Drop bold from headings, strong/b, and rail labels — keep regular weight
-   throughout. Scoped selector list (not a universal *) so we don't fight every
-   element on the page. */
+/* GLOBAL: nuke bold everywhere. Headings, strong/b, code, links — all 400.
+   !important required because Quartz, Quartz components, and the user agent
+   stylesheet all set bold on various elements with their own specificity. */
+*,
+*::before,
+*::after,
 strong, b,
 h1, h2, h3, h4, h5, h6,
-.tags li, .tags a {
-  font-weight: 400;
+.toc, .backlinks, .graph, .explorer,
+button, label,
+.tags li, .tags a,
+svg text {
+  font-weight: 400 !important;
+}
+
+/* Telegram messages quoted into blockquotes sometimes contain markdown like
+   `# header` that Quartz parses as actual headings — render those at body
+   size + weight so quoted snippets don't look like article titles. */
+blockquote h1,
+blockquote h2,
+blockquote h3,
+blockquote h4,
+blockquote h5,
+blockquote h6 {
+  font-size: 1em;
+  margin: 0.4em 0;
+  line-height: 1.4;
+  border: 0;
+  padding: 0;
 }
 
 /* Subtle cyberpunk grid: faint dot pattern on the dark canvas. */
