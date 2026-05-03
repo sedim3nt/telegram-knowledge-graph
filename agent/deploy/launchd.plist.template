@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Template — DO NOT install this directly.
+  setup_wizard.py renders {{REPO_ROOT}} → your absolute repo path and writes the
+  result to ~/Library/LaunchAgents/{{LABEL}}.plist
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>{{LABEL}}</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>{{REPO_ROOT}}/agent/.venv/bin/python</string>
+    <string>-m</string>
+    <string>src.orchestrator</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>{{REPO_ROOT}}/agent</string>
+
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>4</integer>
+    <key>Minute</key>
+    <integer>0</integer>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>{{REPO_ROOT}}/agent/logs/launchd.out.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>{{REPO_ROOT}}/agent/logs/launchd.err.log</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+  </dict>
+
+  <key>SoftResourceLimits</key>
+  <dict>
+    <key>NumberOfFiles</key>
+    <integer>4096</integer>
+  </dict>
+</dict>
+</plist>

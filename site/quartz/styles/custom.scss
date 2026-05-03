@@ -1,0 +1,202 @@
+@use "./base.scss";
+
+/* ============================================================
+   telegram knowledge-graph — cyberpunk overlay on stock Quartz
+   Layered ON TOP of Quartz's color tokens (configured in quartz.config.ts).
+   Goal: keep stock Quartz's typography + layout; paint our palette on top.
+============================================================ */
+
+:root {
+  --clr-blue: #4285f4;          /* primary accent */
+  --clr-blue-light: #60a5fa;    /* lighter blue */
+  --clr-green: #22c55e;         /* terminal green (external links) */
+  --clr-canvas: #0d1117;
+  --clr-border: #30363d;
+}
+
+/* Sidebar branding image — UNCOMMENT after you drop your image at
+   site/quartz/static/brand.jpg (any aspect ratio; will be cropped square).
+   Sized to fit the column up to 240px wide. */
+/*
+.left .page-title::before {
+  content: "";
+  display: block;
+  width: 100%;
+  max-width: 240px;
+  aspect-ratio: 1 / 1;
+  background-image: url("static/brand.jpg");
+  background-size: cover;
+  background-position: center;
+  border-radius: 14px;
+  margin: 0 0 2rem 0;
+}
+*/
+
+/* Drop bold from headings, strong/b, and rail labels — keep regular weight
+   throughout. Scoped selector list (not a universal *) so we don't fight every
+   element on the page. */
+strong, b,
+h1, h2, h3, h4, h5, h6,
+.tags li, .tags a {
+  font-weight: 400;
+}
+
+/* Subtle cyberpunk grid: faint dot pattern on the dark canvas. */
+[saved-theme="dark"] body {
+  background-color: var(--light);
+  background-image: radial-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Code: enable JetBrains Mono ligatures + slightly tightened tracking. */
+code {
+  font-feature-settings: "ss01", "ss02", "tnum", "calt";
+  letter-spacing: -0.01em;
+}
+
+/* Blockquote accent — left border in our blue, faint blue wash. */
+blockquote {
+  background-color: rgba(66, 133, 244, 0.06);
+  border-left: 3px solid var(--clr-blue);
+  padding: 0.8em 1em;
+  border-radius: 0 6px 6px 0;
+}
+
+blockquote a {
+  color: var(--clr-blue-light);
+  font-size: 0.9em;
+}
+
+/* Internal links: subtle blue underline; hover lifts to lighter blue. */
+a.internal {
+  text-decoration: none;
+  border-bottom: 1px solid var(--clr-blue);
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+a.internal:hover {
+  background-color: rgba(66, 133, 244, 0.12);
+  border-bottom-color: var(--clr-blue-light);
+}
+
+/* External links: terminal green. */
+a.external {
+  color: var(--clr-green);
+}
+
+/* Graph node hover glow — keeps the cyberpunk flavor on the small + global graph. */
+[saved-theme="dark"] svg.graph circle {
+  transition: filter 200ms ease, r 200ms ease;
+}
+
+[saved-theme="dark"] svg.graph circle:hover {
+  filter: drop-shadow(0 0 8px var(--clr-blue));
+}
+
+/* Graph node labels: match middle-column body size, drop bold.
+   !important needed because Quartz inlines font-size on text elements. */
+.graph svg text,
+.graph svg .node-text,
+#global-graph-outer svg text,
+#global-graph-outer svg .node-text {
+  font-size: 12.8px !important;
+  font-weight: 400 !important;
+}
+
+/* Tag chips: blue-tinted pills. */
+.tags li,
+.tags a {
+  background-color: rgba(66, 133, 244, 0.1);
+  border: 1px solid rgba(66, 133, 244, 0.4);
+  color: #bfdbfe;
+  font-family: var(--codeFont);
+  font-size: 0.75em;
+  letter-spacing: 0.02em;
+}
+
+/* Search bar: framed in our border color, blue ring on focus. */
+[saved-theme="dark"] #search-bar {
+  background-color: var(--lightgray);
+  border: 1px solid var(--clr-border);
+  color: var(--darkgray);
+  font-family: var(--codeFont);
+}
+
+[saved-theme="dark"] #search-bar:focus {
+  border-color: var(--clr-blue);
+  box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.3);
+  outline: none;
+}
+
+/* Byline + popover hint: code font, muted. */
+.byline,
+.popover-hint {
+  font-family: var(--codeFont);
+  font-size: 0.8em;
+  color: var(--gray);
+}
+
+/* Rail section headers (TOC, BACKLINKS, GRAPH, EXPLORER) — small blue caps. */
+.backlinks > h3,
+.graph > h3,
+.toc > h3,
+.explorer > h3 {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.75em;
+  color: var(--clr-blue);
+  font-family: var(--codeFont);
+}
+
+/* ============================================================
+   Sidebar columns: match middle-column body size, regular weight.
+============================================================ */
+
+.left .explorer,
+.right .toc,
+.right .backlinks,
+.right .graph,
+.explorer ul,
+.toc ul,
+.backlinks ul,
+.graph ul {
+  font-size: 0.8rem;     /* 12.8px — match middle column body */
+  line-height: 1.3;
+}
+
+/* Folder-name labels in the explorer get capitalized: concepts -> Concepts.
+   The visible text lives in <span class="folder-title"> inside the button. */
+.explorer .folder-title,
+.explorer .folder-button span {
+  text-transform: capitalize;
+}
+
+/* ============================================================
+   Vertical breathing room between rail items.
+============================================================ */
+
+.explorer li {
+  margin-top: 0.45rem;   /* 7.2px gap on every item, first-child included */
+}
+
+.toc ul > li,
+.backlinks ul > li {
+  margin-top: 0.45rem;
+}
+.toc ul > li:first-child,
+.backlinks ul > li:first-child {
+  margin-top: 0;
+}
+.toc ul ul > li {
+  margin-top: 0.25rem;
+}
+
+/* Section spacing between rail groups. */
+.right > .toc,
+.right > .backlinks,
+.right > .graph {
+  margin-top: 1.5rem;
+}
+.right > *:first-child {
+  margin-top: 0;
+}
