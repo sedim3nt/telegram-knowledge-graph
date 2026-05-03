@@ -26,8 +26,6 @@ const config: QuartzConfig = {
       fontOrigin: "googleFonts",
       cdnCaching: true,
       typography: {
-        // Geist isn't on Google Fonts; Inter is the closest GA grotesque.
-        // We'll override with Geist via fontsource if we want pixel-exact later.
         header: "Inter",
         body: "Inter",
         code: "JetBrains Mono",

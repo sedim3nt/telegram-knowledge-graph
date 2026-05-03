@@ -171,6 +171,11 @@ a.external {
   text-transform: capitalize;
 }
 
+/* Breadcrumbs above article titles: Home > concepts > ... -> Home > Concepts > ... */
+.breadcrumb-element {
+  text-transform: capitalize;
+}
+
 /* ============================================================
    Vertical breathing room between rail items.
 ============================================================ */
