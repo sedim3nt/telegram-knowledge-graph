@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 
 import subprocess
 
-from . import classify, concept, graph, person, render, summarize
+from . import chat_insights, classify, concept, digest, graph, person, render, summarize
 from .config import Config, DATA_DIR, LOGS_DIR, REPO_ROOT, VAULT_DIR
 from .notify import format_run_summary, send_owner
 from .poll import fetch_updates
@@ -82,6 +82,16 @@ def run_once(*, dry_run: bool = False) -> dict:
         except Exception as e:  # noqa: BLE001
             LOG.warning("person synthesis failed: %s", e)
             stats["persons"] = {"error": str(e)}
+
+        # Compute Ask Bridg3 visitor-question signal BEFORE summarize so the
+        # latter can pick up "what readers actually asked about" when it
+        # decides which aspect of a concept to lead with.
+        try:
+            stats["chat_insights"] = chat_insights.compute()
+        except Exception as e:  # noqa: BLE001
+            LOG.warning("chat_insights failed: %s", e)
+            stats["chat_insights"] = {"error": str(e)}
+
         try:
             # Hash-cached: only re-summarizes concepts/people whose source atoms
             # changed since the last run. First run is heavy; subsequent runs
@@ -100,6 +110,13 @@ def run_once(*, dry_run: bool = False) -> dict:
         except Exception as e:  # noqa: BLE001
             LOG.warning("graph compute failed: %s", e)
             stats["graph"] = {"error": str(e)}
+
+        # Telegram digest: gated by TELEGRAM_DIGEST_ENABLED=1 in .env. Best-effort.
+        try:
+            stats["digest"] = digest.run(window_days=1)
+        except Exception as e:  # noqa: BLE001
+            LOG.warning("digest failed: %s", e)
+            stats["digest"] = {"error": str(e)}
 
         # Push vault changes to GitHub. Cloudflare Pages auto-builds on push.
         try:

@@ -209,6 +209,23 @@ function renderLogin(opts: { error?: string; next: string }): Response {
     background: linear-gradient(90deg, transparent, var(--violet), var(--magenta), transparent);
     border-radius: 2px;
   }
+  /* Optional hero brand image. Drop your image at
+     site/quartz/static/brand.jpg, then uncomment this block + the <div class="hero">
+     below in the body markup, and add /static/brand.jpg to the public-asset
+     allowlist in onRequest() so it isn't auth-gated. */
+  /*
+  .hero {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 12px;
+    margin: 0 0 22px 0;
+    background-color: #0b0d0f;
+    background-image: url("/static/brand.jpg");
+    background-size: cover;
+    background-position: center;
+  }
+  */
   .brand {
     display: flex;
     align-items: center;
@@ -335,6 +352,8 @@ function renderLogin(opts: { error?: string; next: string }): Response {
 <body>
   <div class="wrap">
     <div class="card">
+      <!-- Uncomment after dropping your image at /static/brand.jpg + whitelisting it in onRequest(). -->
+      <!-- <div class="hero" role="img" aria-label="Knowledge Vault"></div> -->
       <div class="brand">Knowledge Vault</div>
       <h1>Sign in</h1>
       <p class="subtitle">Enter the shared credentials to view the channel knowledge graph.</p>
@@ -385,6 +404,16 @@ export const onRequest: PagesFunction<Env> = async ({ request, next, env }) => {
 
   const url = new URL(request.url);
   const path = url.pathname;
+
+  // Public-asset allowlist. Anything the login page itself needs to render
+  // must bypass the auth gate, otherwise the styled login screen ends up
+  // requesting its own background image and getting a 302 → broken render.
+  // Keep this list tight — everything else stays gated.
+  // If you uncomment the .hero block above and add a brand image at
+  // /static/brand.jpg, also add it to this list.
+  if (path === "/favicon.ico") {
+    return next();
+  }
 
   // Logout helper: any GET to /logout clears the cookie and redirects to /login
   if (path === "/logout") {

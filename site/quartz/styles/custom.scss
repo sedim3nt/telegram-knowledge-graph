@@ -1,7 +1,7 @@
 @use "./base.scss";
 
 /* ============================================================
-   telegram knowledge-graph — cyberpunk overlay on stock Quartz
+   ClawRyderz — cyberpunk overlay on stock Quartz
    Layered ON TOP of Quartz's color tokens (configured in quartz.config.ts).
    Goal: keep stock Quartz's typography + layout; paint our palette on top.
 ============================================================ */
@@ -61,6 +61,14 @@ blockquote h6 {
   line-height: 1.4;
   border: 0;
   padding: 0;
+}
+
+/* Date columns in list pages (tags, folders) shouldn't wrap "May 08," / "2026". */
+ul.section-ul time,
+.section-li time,
+.popover-hint time,
+.byline time {
+  white-space: nowrap;
 }
 
 /* Subtle cyberpunk grid: faint dot pattern on the dark canvas. */

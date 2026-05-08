@@ -33,3 +33,9 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Per-fork cloudflared tunnel config (UUID + credentials path)
+agent/deploy/cloudflared-config.yml
+
+# Per-host Claude Code harness config (bypass-permissions, hooks, etc.)
+.claude/

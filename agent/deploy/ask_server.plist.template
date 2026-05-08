@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Template — DO NOT install this directly.
+  setup_wizard.py renders {{REPO_ROOT}} → your absolute repo path and
+  {{LABEL}} → ai.clawryderz.<repo-name>.ask, then writes the result to
+  ~/Library/LaunchAgents/{{LABEL}}.plist.
+
+  This long-lived job runs the FastAPI server that powers the website's
+  "Ask Bridg3" panel. KeepAlive=true so launchd restarts it on crash.
+  cloudflared (separate plist) exposes 127.0.0.1:8787 to the public tunnel.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>{{LABEL}}</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>{{REPO_ROOT}}/agent/.venv/bin/python</string>
+    <string>-m</string>
+    <string>src.ask_server</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>{{REPO_ROOT}}/agent</string>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>KeepAlive</key>
+  <true/>
+
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+
+  <key>StandardOutPath</key>
+  <string>{{REPO_ROOT}}/agent/logs/ask_server.out.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>{{REPO_ROOT}}/agent/logs/ask_server.err.log</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+    <key>ASK_HOST</key>
+    <string>127.0.0.1</string>
+    <key>ASK_PORT</key>
+    <string>8787</string>
+  </dict>
+
+  <key>SoftResourceLimits</key>
+  <dict>
+    <key>NumberOfFiles</key>
+    <integer>4096</integer>
+  </dict>
+</dict>
+</plist>

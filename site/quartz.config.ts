@@ -2,21 +2,21 @@ import { QuartzConfig } from "./quartz/cfg"
 import * as Plugin from "./quartz/plugins"
 
 /**
- * Knowledge Vault — Quartz config
+ * ClawRyderz Knowledge Vault — Quartz config
  *
- * Cyberpunk dark theme. Content is symlinked to ../vault.
+ * Cyberpunk Railway-inspired dark theme. Content is symlinked to ../vault.
  * Auth gating happens at the edge via functions/_middleware.ts (Cloudflare Pages).
- *
- * Customize the three commented fields below for your channel before deploy.
  */
 const config: QuartzConfig = {
   configuration: {
-    // Customize for your channel:
     pageTitle: "Knowledge Vault",
-    pageTitleSuffix: "",
+    pageTitleSuffix: "· Knowledge Vault",
     enableSPA: true,
     enablePopovers: true,
-    analytics: null,
+    analytics: {
+      provider: "google",
+      tagId: "G-BDPNBPM1KC",
+    },
     locale: "en-US",
     baseUrl: "your-site.example.com",
     ignorePatterns: ["_atomic", "_meta", "private", "templates", ".obsidian"],
@@ -71,7 +71,7 @@ const config: QuartzConfig = {
         },
         keepBackground: false,
       }),
-      Plugin.ObsidianFlavoredMarkdown({ enableInHtmlEmbed: false }),
+      Plugin.ObsidianFlavoredMarkdown({ enableInHtmlEmbed: false, parseTags: false }),
       Plugin.GitHubFlavoredMarkdown(),
       Plugin.TableOfContents(),
       Plugin.CrawlLinks({ markdownLinkResolution: "shortest" }),

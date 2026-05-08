@@ -97,7 +97,7 @@ Rules:
 - If a bot's account is operated by a known human author, list the bot in `linked_bots` of the human's cluster, NOT as a separate human. The user-id of the bot still matters for filtering bot-authored messages, hence `linked_bots`.
 - If you're uncertain whether two mentions refer to the same person, KEEP THEM SEPARATE and set `confidence: low`. Better to under-merge than over-merge.
 - Strip leading "@" from aliases when matching to author usernames (which don't carry the @).
-- Resolve case-insensitively (case is just style).
+- Resolve case-insensitively (Sedim3nt = sedim3nt).
 - Famous people from outside the channel ARE valid humans — include them with `canonical_user_id: null`.
 - Aim for high precision over high recall — `unresolved_mentions` is a fine landing place for ambiguous tokens."""
 

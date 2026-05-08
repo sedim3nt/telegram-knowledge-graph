@@ -18,14 +18,14 @@ token is also dashboard-only, so the manual step is unavoidable. Once.
 
 1. Visit https://dash.cloudflare.com/?to=/:account/pages
 2. **Create a project → Connect to Git**
-3. Authorize the Cloudflare GitHub App (if not already) and grant access to your fork's repo
-4. Pick the repo
+3. Authorize the Cloudflare GitHub App (if not already) and grant access to `sedim3nt/clawryderz`
+4. Pick the `clawryderz` repo
 
 ### 2. Build configuration
 
 | Field | Value |
 |---|---|
-| Project name | _(your channel slug — lowercase, no spaces)_ |
+| Project name | `clawryderz` |
 | Production branch | `main` |
 | Framework preset | `None` |
 | **Root directory** | `site` |
@@ -40,33 +40,35 @@ Under **Settings → Environment variables → Production**, add:
 
 | Variable | Value |
 |---|---|
-| `SITE_USERNAME` | _(your chosen site username)_ |
-| `SITE_PASSWORD` | _(value of `SITE_PASSWORD` from your local `.env` — generate with `openssl rand -base64 24`)_ |
+| `SITE_USERNAME` | `ryder` |
+| `SITE_PASSWORD` | _(value of `SITE_PASSWORD` from your local `.env`)_ |
 | `NODE_VERSION` | `22` |
 
-The middleware reads `SITE_USERNAME` and `SITE_PASSWORD` (both required) from these vars.
+The middleware reads `SITE_USERNAME` (defaults to `ryder` if unset) and `SITE_PASSWORD` (required) from these vars.
 
 ### 4. Trigger first deploy
 
-Click **Save and Deploy**. First build takes 1-3 minutes. You'll get a `*.pages.dev` URL — visit it and you should see the sign-in form.
+Click **Save and Deploy**. First build takes 1-3 minutes. You'll get a `*.pages.dev` URL — visit it and you should see the HTTP basic auth prompt.
 
-Test login with the username/password you set above.
+Test login:
+- Username: `ryder`
+- Password: from `.env`
 
-### 5. Custom domain (optional)
+### 5. Custom domain — `clawryderz.spirittree.dev`
 
 1. In the Pages project: **Custom domains → Set up a custom domain**
-2. Enter your subdomain (e.g. `vault.example.com`)
-3. If the apex domain is in the same Cloudflare account, the CNAME is created automatically; otherwise add the CNAME at your DNS provider as instructed
+2. Enter `clawryderz.spirittree.dev`
+3. Cloudflare auto-creates the CNAME (since `spirittree.dev` is in your CF account already — `CLOUDFLARE_ZONE_ID` in `.env` confirms this)
 4. SSL provisions in ~30 seconds
 
-Site is now live at your custom domain, gated.
+Site is now live at `https://clawryderz.spirittree.dev`, gated.
 
 ## Ongoing operation
 
 After the one-time setup, every commit the orchestrator makes to `vault/` (nightly at 01:00) triggers an automatic Cloudflare Pages rebuild. No further manual action.
 
 You can manually trigger a redeploy any time via:
-- Cloudflare dashboard → Pages → _your project_ → Deployments → Retry / Manual deploy
+- Cloudflare dashboard → Pages → clawryderz → Deployments → Retry / Manual deploy
 - Or push a no-op commit: `git commit --allow-empty -m "force redeploy" && git push`
 
 ## Verifying the build is healthy
@@ -83,4 +85,4 @@ After a deploy, the dashboard shows status. Common gotchas:
 The current setup is single shared password. Two upgrade paths:
 
 - **Cloudflare Access** (free for ≤50 users) — replaces basic auth with email-based magic links. Requires Cloudflare Zero Trust setup; no code changes (the middleware can stay as a fallback or be removed).
-- **Per-user passwords** — change the middleware to read a comma-separated `SITE_USERS=alice:passA,bob:passB` env var.
+- **Per-user passwords** — change the middleware to read a comma-separated `SITE_USERS=ryder:passA,alice:passB` env var.

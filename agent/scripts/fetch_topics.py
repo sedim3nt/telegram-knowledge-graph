@@ -10,7 +10,7 @@ Output format (agent/data/topics.json):
     {
       "fetched_at": "2026-04-30T...",
       "chat_id": -1003744226857,
-      "chat_title": "your channel",
+      "chat_title": "ClawRyderz",
       "topics": [
         {"id": 19, "title": "Memory config", "icon_color": 11129336,
          "from_id": 12345, "date_iso": "...", "closed": false, "pinned": false},

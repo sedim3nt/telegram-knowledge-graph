@@ -3,12 +3,16 @@
 Output is Quartz-friendly: YAML frontmatter + body with sections.
 
 Atomic deep-links go straight to t.me — atoms themselves are never published.
+
+Also emits vault/_meta/vault-bundle.json — a compact, ask_server-friendly
+representation of the whole knowledge base. The Ask Bridg3 server reads this
+once per request and prepends it to the model prompt so prompt caching works.
 """
 from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from .config import DATA_DIR, VAULT_DIR
@@ -18,6 +22,8 @@ LOG = logging.getLogger("render")
 ATOMIC_DIR = DATA_DIR / "atomic"
 CONCEPTS_DIR = VAULT_DIR / "concepts"
 PEOPLE_DIR = VAULT_DIR / "people"
+META_DIR = VAULT_DIR / "_meta"
+VAULT_BUNDLE_PATH = META_DIR / "vault-bundle.json"
 
 
 def _atom_lookup() -> dict[str, dict]:
@@ -331,8 +337,130 @@ def render_person(person: dict) -> str:
     return "\n".join(parts)
 
 
+def _bundle_concept(concept: dict, atoms: dict[str, dict]) -> dict:
+    """Compact concept dict for the ask bundle — summaries + a few quotes."""
+    cur = next(
+        (v for v in concept.get("versions", []) if v.get("v") == concept.get("current_version")),
+        None,
+    )
+    quotes: list[dict] = []
+    if cur:
+        est_atom = atoms.get(cur.get("established_by_atom"))
+        if est_atom and est_atom.get("text"):
+            quotes.append({
+                "kind": "establishing",
+                "author": est_atom.get("author_username"),
+                "date": _short_date(est_atom.get("date_iso")),
+                "text": (est_atom.get("text") or "").strip()[:280],
+                "link": est_atom.get("deep_link"),
+            })
+        # Most recent 3 discussion messages
+        consensus = (cur.get("consensus_messages") or [])[-3:]
+        for atom_id in consensus:
+            a = atoms.get(atom_id)
+            if a and a.get("text"):
+                quotes.append({
+                    "kind": "discussion",
+                    "author": a.get("author_username"),
+                    "date": _short_date(a.get("date_iso")),
+                    "text": (a.get("text") or "").strip()[:240],
+                    "link": a.get("deep_link"),
+                })
+
+    anti = []
+    for ap in (concept.get("anti_patterns") or [])[:5]:
+        a = atoms.get(ap.get("atom_id"))
+        anti.append({
+            "claim": (ap.get("claim") or "").strip()[:200],
+            "author": a.get("author_username") if a else None,
+        })
+
+    return {
+        "id": concept["concept_id"],
+        "title": concept.get("title"),
+        "category": concept.get("category"),
+        "status": concept.get("status"),
+        "summary": (concept.get("summary") or "").strip(),
+        "consensus_summary": (concept.get("consensus_summary") or "").strip(),
+        "atom_count": concept.get("atom_count", 0),
+        "first_seen": _short_date(concept.get("first_seen")),
+        "last_updated": _short_date(concept.get("last_updated")),
+        "related": concept.get("related", []),
+        "contributors": [c.get("handle") for c in (concept.get("contributors") or [])[:8]],
+        "quotes": quotes,
+        "anti_patterns": anti,
+    }
+
+
+def _bundle_person(person: dict) -> dict | None:
+    """Compact person dict for the ask bundle. Skips externals + zero-message rows."""
+    if person.get("external") or person.get("total_messages", 0) == 0:
+        return None
+    return {
+        "username": person.get("username"),
+        "display_name": person.get("display_name"),
+        "is_bot": bool(person.get("is_bot") or person.get("is_bot_persona")),
+        "total_messages": person.get("total_messages", 0),
+        "first_seen": _short_date(person.get("first_message_at")),
+        "last_seen": _short_date(person.get("last_message_at")),
+        "activity_summary": (person.get("activity_summary") or "").strip(),
+        "top_concepts": [
+            {
+                "id": c["concept_id"],
+                "msg_count": c.get("msg_count", 0),
+                "role": c.get("role"),
+            }
+            for c in (person.get("concepts") or [])[:8]
+        ],
+    }
+
+
+def build_vault_bundle() -> dict:
+    """Build the JSON document Ask Bridg3 reads as its world model."""
+    atoms = _atom_lookup()
+
+    concepts: list[dict] = []
+    for p in sorted(CONCEPTS_DIR.glob("*.json")):
+        try:
+            concepts.append(_bundle_concept(json.loads(p.read_text(encoding="utf-8")), atoms))
+        except json.JSONDecodeError:
+            continue
+
+    people: list[dict] = []
+    for p in sorted(PEOPLE_DIR.glob("*.json")):
+        try:
+            entry = _bundle_person(json.loads(p.read_text(encoding="utf-8")))
+        except json.JSONDecodeError:
+            continue
+        if entry is not None:
+            people.append(entry)
+
+    return {
+        "built_at": datetime.now(timezone.utc).isoformat(),
+        "concept_count": len(concepts),
+        "person_count": len(people),
+        "concepts": concepts,
+        "people": people,
+    }
+
+
+def write_vault_bundle() -> Path:
+    META_DIR.mkdir(parents=True, exist_ok=True)
+    bundle = build_vault_bundle()
+    VAULT_BUNDLE_PATH.write_text(
+        json.dumps(bundle, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    size_kb = VAULT_BUNDLE_PATH.stat().st_size / 1024
+    LOG.info(
+        "vault bundle: %d concepts + %d people (%.1f KB) → %s",
+        bundle["concept_count"], bundle["person_count"], size_kb, VAULT_BUNDLE_PATH,
+    )
+    return VAULT_BUNDLE_PATH
+
+
 def render_all() -> dict:
-    """Render every concept and person JSON to .md siblings."""
+    """Render every concept and person JSON to .md siblings + vault bundle."""
     atoms = _atom_lookup()
     LOG.info("loaded %d atoms for citation lookup", len(atoms))
 
@@ -354,6 +482,8 @@ def render_all() -> dict:
         md = render_person(person)
         (p.with_suffix(".md")).write_text(md, encoding="utf-8")
         person_count += 1
+
+    write_vault_bundle()
 
     LOG.info("rendered %d concepts + %d people", concept_count, person_count)
     return {"concepts_rendered": concept_count, "people_rendered": person_count}

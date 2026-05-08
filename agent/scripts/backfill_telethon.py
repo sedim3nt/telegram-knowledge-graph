@@ -2,7 +2,7 @@
 
 Authenticates with your Telegram user account using api_id/api_hash from
 my.telegram.org. Iterates the channel's history oldest-first and writes
-atomic.json files matching the same schema as the daily bot poll.
+atomic.json files matching the same schema as Bridg3bot's forward poll.
 
 Run from the repo root:
     agent/.venv/bin/python agent/scripts/backfill_telethon.py
@@ -82,7 +82,7 @@ def main() -> int:
         "--list-chats",
         action="store_true",
         help="Print all chats your account is a member of (chat_id + title) and exit. "
-             "Useful for finding your channel's chat_id.",
+             "Useful for finding the chat_id of ClawRyderz.",
     )
     args = parser.parse_args()
 
@@ -104,7 +104,7 @@ def main() -> int:
             for dialog in client.iter_dialogs():
                 kind = "channel" if dialog.is_channel else ("group" if dialog.is_group else "user")
                 print(f"  {dialog.id:>20}  [{kind:<8}]  {dialog.name}")
-        print("\nCopy your channel's id and pass it via --chat-id <id>")
+        print("\nCopy the id for ClawRyderz and pass it via --chat-id <id>")
         print("(or set TELEGRAM_BRIDG3BOT_CHAT_ID in .env so future runs pick it up).")
         return 0
 

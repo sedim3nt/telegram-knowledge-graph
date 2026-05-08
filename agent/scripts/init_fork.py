@@ -1,7 +1,7 @@
-"""Initialize this template clone for your Telegram channel.
+"""Initialize a fresh ClawRyderz fork for a new Telegram channel.
 
-Wipes the inherited vault data (concepts/people/graph from any prior
-sample) and clears the local-only data caches so you start
+Wipes the inherited vault data (concepts/people/graph from the original
+ClawRyderz instance) and clears the local-only data caches so you start
 clean with your own channel's content.
 
 Run ONCE, immediately after cloning the repo for your own channel.
@@ -47,7 +47,7 @@ def wipe_dir_contents(path: Path) -> int:
 
 
 def _check_not_original_instance() -> None:
-    """Refuse to run on the canonical sedim3nt/clawryderz instance (live deployment data)."""
+    """Refuse to run on the canonical sedim3nt/clawryderz repo (would wipe live data)."""
     import subprocess as sp
     try:
         remote = sp.check_output(
@@ -57,9 +57,9 @@ def _check_not_original_instance() -> None:
     except Exception:
         return  # no remote configured = fork in progress, fine
     if "sedim3nt/clawryderz" in remote:
-        print("\nERROR: This appears to be the canonical sedim3nt/clawryderz live instance")
+        print("\nERROR: This appears to be the original ClawRyderz instance")
         print(f"       (origin = {remote}).")
-        print("       init_fork.py would wipe its real channel data.")
+        print("       init_fork.py would wipe the live channel's data.")
         print()
         print("If you really meant to do this:")
         print("  1. Change the GitHub remote first:")
@@ -70,7 +70,7 @@ def _check_not_original_instance() -> None:
 
 def main() -> int:
     _check_not_original_instance()
-    print("\n══ telegram knowledge-graph initialization ══\n")
+    print("\n══ ClawRyderz fork initialization ══\n")
     print("This will WIPE the published vault content (the original channel's data)")
     print("and the local data caches. Your code, configs, and Quartz site stay intact.\n")
     print(f"Repo: {REPO_ROOT}\n")

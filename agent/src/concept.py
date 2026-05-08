@@ -264,11 +264,29 @@ def synthesize() -> dict:
         # Drop the internal _atoms set
         concept.pop("_atoms", None)
 
-    # Write
+    # Write. Carry forward Sonnet-generated summary fields from any prior file
+    # so summarize.py's hash-cache survives — without this, every nightly run
+    # appears to have no cached summary and re-calls Sonnet for every concept
+    # (and a rate-limited night wipes the callout from every page).
     CONCEPTS_DIR.mkdir(parents=True, exist_ok=True)
+    SUMMARY_FIELDS = (
+        "consensus_summary",
+        "summary_hash",
+        "summary_atom_count",
+        "summary_generated_at",
+        "summary_model",
+    )
     written = 0
     for concept in concepts.values():
         out = CONCEPTS_DIR / f"{concept['concept_id']}.json"
+        if out.exists():
+            try:
+                prior = json.loads(out.read_text(encoding="utf-8"))
+                for f in SUMMARY_FIELDS:
+                    if f in prior:
+                        concept[f] = prior[f]
+            except json.JSONDecodeError:
+                pass
         out.write_text(
             json.dumps(concept, ensure_ascii=False, indent=2, default=str),
             encoding="utf-8",

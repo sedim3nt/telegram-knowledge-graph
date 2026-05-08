@@ -1,4 +1,4 @@
-"""Idempotent setup wizard for the telegram knowledge-graph template.
+"""Idempotent setup wizard for ClawRyderz.
 
 Run from the repo root:
     python3 agent/scripts/setup_wizard.py
@@ -7,7 +7,7 @@ Steps:
   1. Verify Python >= 3.11
   2. Create agent/.venv if missing; install deps
   3. Sanity-check .env required keys; prompt for missing ones
-  4. Validate Telegram bot token via getMe
+  4. Validate Bridg3bot token via Telegram getMe
   5. Optionally capture TELEGRAM_BRIDG3BOT_CHAT_ID by polling getUpdates
   6. Optionally run a --dry-run smoke test
   7. Optionally install the launchd LaunchAgent (macOS)
@@ -29,9 +29,19 @@ PYTHON_BIN = VENV_DIR / "bin" / "python"
 ENV_PATH = REPO_ROOT / ".env"
 ENV_EXAMPLE = REPO_ROOT / ".env.example"
 PLIST_TEMPLATE = AGENT_DIR / "deploy" / "launchd.plist.template"
-# Label is derived from the directory name so each fork installs as its own job
-LAUNCHD_LABEL = f"ai.tkg.{REPO_ROOT.name.lower().replace('_', '-')}"
+ASK_PLIST_TEMPLATE = AGENT_DIR / "deploy" / "ask_server.plist.template"
+CFD_PLIST_TEMPLATE = AGENT_DIR / "deploy" / "cloudflared.plist.template"
+CFD_CONFIG_PATH = AGENT_DIR / "deploy" / "cloudflared-config.yml"
+# Label is derived from the directory name so each fork installs as its own job.
+# The Ask Bridg3 server + cloudflared get suffixed labels so all three jobs
+# can coexist without colliding.
+_LABEL_BASE = f"ai.clawryderz.{REPO_ROOT.name.lower().replace('_', '-')}"
+LAUNCHD_LABEL = f"ai.tkg.{REPO_ROOT.name.lower().replace(chr(95), chr(45))}"
+ASK_LAUNCHD_LABEL = f"{_LABEL_BASE}.ask"
+CFD_LAUNCHD_LABEL = f"{_LABEL_BASE}.cloudflared"
 PLIST_DST = Path.home() / "Library" / "LaunchAgents" / f"{LAUNCHD_LABEL}.plist"
+ASK_PLIST_DST = Path.home() / "Library" / "LaunchAgents" / f"{ASK_LAUNCHD_LABEL}.plist"
+CFD_PLIST_DST = Path.home() / "Library" / "LaunchAgents" / f"{CFD_LAUNCHD_LABEL}.plist"
 
 REQUIRED_KEYS = ["TELEGRAM_BRIDG3BOT_TOKEN"]
 OPTIONAL_KEYS = [
@@ -41,6 +51,7 @@ OPTIONAL_KEYS = [
     "ANTHROPIC_API_KEY",
     "KIMI_API_KEY",
     "SITE_PASSWORD",
+    "ASK_SHARED_SECRET",
 ]
 
 
@@ -239,31 +250,85 @@ def step_dry_run() -> None:
     )
 
 
+def _install_plist(template: Path, dst: Path, label: str, *, extra: dict[str, str] | None = None) -> None:
+    rendered = template.read_text().replace("{{REPO_ROOT}}", str(REPO_ROOT)).replace("{{LABEL}}", label)
+    for k, v in (extra or {}).items():
+        rendered = rendered.replace(k, v)
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    dst.write_text(rendered)
+    subprocess.run(["launchctl", "unload", str(dst)], check=False, capture_output=True)
+    subprocess.check_call(["launchctl", "load", str(dst)])
+
+
 def step_launchd() -> None:
     if sys.platform != "darwin":
         print("  (non-macOS — skipping launchd; on Linux use cron)")
         return
-    if not yesno(f"  Install launchd LaunchAgent at {PLIST_DST}?", True):
+    if not yesno(f"  Install nightly orchestrator launchd job at {PLIST_DST}?", True):
         return
     if not PLIST_TEMPLATE.exists():
         print(f"  ERR plist template missing: {PLIST_TEMPLATE}")
         return
-    rendered = (
-        PLIST_TEMPLATE.read_text()
-        .replace("{{REPO_ROOT}}", str(REPO_ROOT))
-        .replace("{{LABEL}}", LAUNCHD_LABEL)
-    )
-    PLIST_DST.parent.mkdir(parents=True, exist_ok=True)
-    PLIST_DST.write_text(rendered)
-    # Reload (unload may fail harmlessly if not loaded)
-    subprocess.run(
-        ["launchctl", "unload", str(PLIST_DST)], check=False, capture_output=True
-    )
-    subprocess.check_call(["launchctl", "load", str(PLIST_DST)])
+    _install_plist(PLIST_TEMPLATE, PLIST_DST, LAUNCHD_LABEL)
     print(f"  OK loaded {PLIST_DST}")
     print(f"    Label: {LAUNCHD_LABEL}")
     print("    Next run: 04:00 local time. Manual fire:")
     print("    env -u CLAUDECODE agent/.venv/bin/python -m src.orchestrator")
+
+
+def step_ask_server_launchd() -> None:
+    """Install the Ask Bridg3 FastAPI long-lived job."""
+    if sys.platform != "darwin":
+        return
+    if not ASK_PLIST_TEMPLATE.exists():
+        return
+    if not yesno(f"\n  Install Ask Bridg3 FastAPI job at {ASK_PLIST_DST}?", True):
+        return
+    _install_plist(ASK_PLIST_TEMPLATE, ASK_PLIST_DST, ASK_LAUNCHD_LABEL)
+    print(f"  OK loaded {ASK_PLIST_DST}")
+    print(f"    Label: {ASK_LAUNCHD_LABEL}")
+    print("    Health check: curl -s http://127.0.0.1:8787/health")
+
+
+def step_cloudflared_launchd() -> None:
+    """Install the cloudflared tunnel that exposes ask_server.py to the public.
+
+    Skipped if cloudflared isn't on PATH or no cloudflared-config.yml exists yet
+    (the user has to run `cloudflared tunnel create` + DNS routing first).
+    """
+    if sys.platform != "darwin":
+        return
+    if not CFD_PLIST_TEMPLATE.exists():
+        return
+    cloudflared_bin = ""
+    for candidate in ("/opt/homebrew/bin/cloudflared", "/usr/local/bin/cloudflared"):
+        if Path(candidate).exists():
+            cloudflared_bin = candidate
+            break
+    if not cloudflared_bin:
+        from_path = subprocess.run(["which", "cloudflared"], capture_output=True, text=True, check=False)
+        cloudflared_bin = from_path.stdout.strip()
+    if not cloudflared_bin:
+        print("\n  (cloudflared not found on PATH — skipping tunnel job.")
+        print("   Install it: `brew install cloudflared`, then re-run this wizard.)")
+        return
+    if not CFD_CONFIG_PATH.exists():
+        print(f"\n  (cloudflared-config.yml missing at {CFD_CONFIG_PATH} — skipping tunnel job.")
+        print("   First run: cloudflared tunnel login && cloudflared tunnel create ask-bridg3")
+        print("   Then: cloudflared tunnel route dns ask-bridg3 ask.<your-domain>")
+        print("   Then: cp agent/deploy/cloudflared-config.example.yml agent/deploy/cloudflared-config.yml")
+        print("   Edit cloudflared-config.yml with your tunnel UUID + hostname, then re-run this wizard.)")
+        return
+    if not yesno(f"\n  Install cloudflared tunnel launchd job at {CFD_PLIST_DST}?", True):
+        return
+    _install_plist(
+        CFD_PLIST_TEMPLATE, CFD_PLIST_DST, CFD_LAUNCHD_LABEL,
+        extra={"{{CLOUDFLARED_BIN}}": cloudflared_bin},
+    )
+    print(f"  OK loaded {CFD_PLIST_DST}")
+    print(f"    Label: {CFD_LAUNCHD_LABEL}")
+    print(f"    Binary: {cloudflared_bin}")
+    print(f"    Config: {CFD_CONFIG_PATH}")
 
 
 def main() -> None:
@@ -275,6 +340,8 @@ def main() -> None:
     step_capture_chat_id()
     step_dry_run()
     step_launchd()
+    step_ask_server_launchd()
+    step_cloudflared_launchd()
     print("\nOK setup complete.\n")
 
 

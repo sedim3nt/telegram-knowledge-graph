@@ -23,8 +23,10 @@ import Breadcrumbs from "./Breadcrumbs"
 import Comments from "./Comments"
 import Flex from "./Flex"
 import ConditionalRender from "./ConditionalRender"
+import AskBridg3 from "./AskBridg3"
 
 export {
+  AskBridg3,
   ArticleTitle,
   Content,
   TagContent,

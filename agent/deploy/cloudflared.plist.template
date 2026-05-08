@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Template — DO NOT install this directly.
+  setup_wizard.py renders {{REPO_ROOT}} → your absolute repo path,
+  {{LABEL}} → ai.clawryderz.<repo-name>.cloudflared, and
+  {{CLOUDFLARED_BIN}} → the path to the cloudflared binary, then writes the
+  result to ~/Library/LaunchAgents/{{LABEL}}.plist.
+
+  This job runs the named tunnel that exposes 127.0.0.1:8787 (the FastAPI
+  ask_server) to the public hostname configured in
+  agent/deploy/cloudflared-config.yml.
+
+  One-time setup:
+    brew install cloudflared
+    cloudflared tunnel login
+    cloudflared tunnel create ask-bridg3            # writes credentials JSON
+    cloudflared tunnel route dns ask-bridg3 ask.<your-domain>
+    cp agent/deploy/cloudflared-config.example.yml agent/deploy/cloudflared-config.yml
+    # edit cloudflared-config.yml: tunnel UUID, credentials path, hostname
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>{{LABEL}}</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>{{CLOUDFLARED_BIN}}</string>
+    <string>tunnel</string>
+    <string>--config</string>
+    <string>{{REPO_ROOT}}/agent/deploy/cloudflared-config.yml</string>
+    <string>run</string>
+  </array>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>KeepAlive</key>
+  <true/>
+
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+
+  <key>StandardOutPath</key>
+  <string>{{REPO_ROOT}}/agent/logs/cloudflared.out.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>{{REPO_ROOT}}/agent/logs/cloudflared.err.log</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+  </dict>
+</dict>
+</plist>

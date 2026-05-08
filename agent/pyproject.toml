@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "tkg-agent"
 version = "0.1.0"
-description = "Self-hostable agent that turns a Telegram channel into a versioned, password-gated knowledge website."
+description = "Cyberpunk knowledge vault for a Telegram dev channel."
 requires-python = ">=3.11"
 dependencies = [
     "python-dotenv>=1.0",
@@ -15,6 +15,7 @@ dependencies = [
 
 [project.optional-dependencies]
 backfill = ["telethon>=1.36"]
+ask = ["fastapi>=0.115", "uvicorn[standard]>=0.30"]
 dev = ["ruff", "pytest"]
 
 [tool.setuptools.packages.find]

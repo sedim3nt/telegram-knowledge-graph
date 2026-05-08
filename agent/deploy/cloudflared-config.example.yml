@@ -1,0 +1,16 @@
+# cloudflared named-tunnel config for Ask Bridg3.
+#
+# 1. Run `cloudflared tunnel create ask-bridg3` — this writes a credentials JSON
+#    to ~/.cloudflared/<tunnel-uuid>.json and prints the UUID. Set both below.
+# 2. Run `cloudflared tunnel route dns ask-bridg3 ask.<your-domain>` to bind a
+#    public hostname to the tunnel.
+# 3. Copy this file to cloudflared-config.yml (gitignored — it has the UUID +
+#    credentials path) and fill in the placeholders.
+
+tunnel: REPLACE_WITH_TUNNEL_UUID
+credentials-file: /Users/REPLACE/.cloudflared/REPLACE_WITH_TUNNEL_UUID.json
+
+ingress:
+  - hostname: ask.REPLACE-WITH-YOUR-DOMAIN
+    service: http://127.0.0.1:8787
+  - service: http_status:404

@@ -184,11 +184,27 @@ def synthesize() -> dict:
     # Drop empty bot-persona records that never had a host (orphans)
     person_records = {k: v for k, v in person_records.items() if v["total_messages"] > 0 or v.get("external")}
 
-    # Write
+    # Write. Carry forward Sonnet-generated summary fields from any prior file
+    # so summarize.py's hash-cache survives the nightly rebuild.
     PEOPLE_DIR.mkdir(parents=True, exist_ok=True)
+    SUMMARY_FIELDS = (
+        "activity_summary",
+        "summary_hash",
+        "summary_atom_count",
+        "summary_generated_at",
+        "summary_model",
+    )
     written = 0
     for username, rec in person_records.items():
         out = PEOPLE_DIR / f"{_slug(username)}.json"
+        if out.exists():
+            try:
+                prior = json.loads(out.read_text(encoding="utf-8"))
+                for f in SUMMARY_FIELDS:
+                    if f in prior:
+                        rec[f] = prior[f]
+            except json.JSONDecodeError:
+                pass
         out.write_text(
             json.dumps(rec, ensure_ascii=False, indent=2, default=str),
             encoding="utf-8",

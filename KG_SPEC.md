@@ -74,8 +74,8 @@ One file per Telegram message. Path: `agent/data/atomic/<id>.json`.
 
 ### Field rules
 
-- `id`: deterministic from `message_id`. Format: `clr-<message_id>`. Same message ingested by the bot poll or Telethon produces the same id (idempotent). Prefix is historical and stable across all atoms.
-- `source`: `"bridg3bot-poll"` | `"telethon-backfill"`. Used to track which path produced this atom. Useful for debugging and for re-running source-specific extraction. The `bridg3bot-poll` literal is a stable schema value, not a brand reference — change it and you fork the data format.
+- `id`: deterministic from `message_id`. Format: `clr-<message_id>`. Same message ingested by Bridg3bot or Telethon produces the same id (idempotent).
+- `source`: `"bridg3bot-poll"` | `"telethon-backfill"`. Used to track which path produced this atom. Useful for debugging and for re-running source-specific extraction.
 - `thread_root_id` / `reply_to_message_id`: nullable. Threading is reconstructed at concept-synthesis time, not at ingest.
 - `topic_id`: Telegram forum topic id, if the chat is a forum. Null otherwise.
 - `media_kind`: `null` | `"photo"` | `"video"` | `"document"` | `"voice"` | `"sticker"` | `"audio"`. Caption (if any) goes in `media_caption`; the file itself is **not** downloaded in v1.
@@ -200,7 +200,7 @@ Telethon backfill processes messages **oldest-first** (`reverse=True` in `iter_m
 1. **Origin gets v1.** When concept synthesis sees a message about `memory-config` for the first time, it spawns the concept with that message as `versions[0].establishing_messages`. Originals first.
 2. **Supersession is causal.** A later message that says "use 1536-dim embeddings instead" can only meaningfully reference v1 if v1 already exists. Reverse-order processing breaks this.
 
-The bot's forward poll naturally produces oldest-first too (Telegram returns updates ordered by `update_id` ascending).
+Bridg3bot's forward poll naturally produces oldest-first too (Telegram returns updates ordered by `update_id` ascending).
 
 ## Synthesis pipeline (run after backfill or nightly)
 

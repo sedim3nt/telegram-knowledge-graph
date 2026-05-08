@@ -22,6 +22,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 
+from . import chat_insights
 from .config import DATA_DIR, VAULT_DIR
 
 LOG = logging.getLogger("summarize")
@@ -243,13 +244,30 @@ def _summarize_concept_one(
 
     anti_chunks = [f"- {ap.get('claim','')[:200]}" for ap in concept.get("anti_patterns", [])[:5]]
 
+    # Visitor question signal (Ask Bridg3 logs, last 7 days). Never includes
+    # Bridg3's *answers* — that would let the model grade its own homework.
+    # Just the questions, used as a hint for which aspect of the topic
+    # actually matters to readers.
+    chat_signal = chat_insights.signal_for_concept(concept["concept_id"]) or {}
+    chat_block = ""
+    if chat_signal.get("count"):
+        sample_qs = chat_signal.get("sample_questions") or []
+        chat_block = (
+            f"\nRecent visitor questions about this topic ({chat_signal['count']} in "
+            f"the last 7 days):\n"
+            + "\n".join(f"- {q}" for q in sample_qs[:3])
+            + "\n\nUse these to weight which aspect of the consensus to lead with — "
+              "but do NOT answer the questions; only summarize the channel's stance.\n"
+        )
+
     user_prompt = (
         f"Concept: {title}\n"
         f"Canonical description: {short_desc}\n\n"
         f"Recent messages on this topic (oldest establishing first, then most-recent discussion):\n"
         f"{chr(10).join(quote_blocks)}\n\n"
         f"Anti-patterns flagged:\n"
-        f"{chr(10).join(anti_chunks) if anti_chunks else '(none)'}\n\n"
+        f"{chr(10).join(anti_chunks) if anti_chunks else '(none)'}\n"
+        f"{chat_block}\n"
         "Write the 2-3 sentence current-consensus summary."
     )
 
