@@ -24,6 +24,7 @@ from pathlib import Path
 
 from . import chat_insights
 from .config import DATA_DIR, VAULT_DIR
+from .sanitize import escape_for_prompt, wrap_untrusted
 
 LOG = logging.getLogger("summarize")
 
@@ -226,23 +227,30 @@ def _summarize_concept_one(
     title = concept.get("title", concept["concept_id"])
     short_desc = concept.get("summary", "")
 
+    # All atom text + visitor questions are untrusted. Wrap each in a quote tag
+    # so the model can see the boundary; escape_for_prompt neutralises any
+    # tag-shaped payload inside (e.g. a message containing a fake </quote> or
+    # <system-reminder> block).
     quote_blocks: list[str] = []
     for atom_id in establishing[:1]:
         atom = atoms.get(atom_id)
         if atom and atom.get("text"):
-            quote_blocks.append(
-                f"ESTABLISHING ({atom.get('author_username') or '?'}, "
-                f"{(atom.get('date_iso') or '')[:10]}): {atom['text'][:400]}"
-            )
+            author = escape_for_prompt(atom.get("author_username") or "?")
+            date = escape_for_prompt((atom.get("date_iso") or "")[:10])
+            body = wrap_untrusted(atom["text"][:400], tag="quote", role="establishing")
+            quote_blocks.append(f"ESTABLISHING ({author}, {date}):\n{body}")
     for atom_id in consensus[-8:]:
         atom = atoms.get(atom_id)
         if atom and atom.get("text"):
-            quote_blocks.append(
-                f"({atom.get('author_username') or '?'}, "
-                f"{(atom.get('date_iso') or '')[:10]}): {atom['text'][:300]}"
-            )
+            author = escape_for_prompt(atom.get("author_username") or "?")
+            date = escape_for_prompt((atom.get("date_iso") or "")[:10])
+            body = wrap_untrusted(atom["text"][:300], tag="quote", role="recent")
+            quote_blocks.append(f"({author}, {date}):\n{body}")
 
-    anti_chunks = [f"- {ap.get('claim','')[:200]}" for ap in concept.get("anti_patterns", [])[:5]]
+    anti_chunks = [
+        f"- {wrap_untrusted((ap.get('claim') or '')[:200], tag='anti_pattern')}"
+        for ap in concept.get("anti_patterns", [])[:5]
+    ]
 
     # Visitor question signal (Ask Bridg3 logs, last 7 days). Never includes
     # Bridg3's *answers* — that would let the model grade its own homework.
@@ -252,17 +260,22 @@ def _summarize_concept_one(
     chat_block = ""
     if chat_signal.get("count"):
         sample_qs = chat_signal.get("sample_questions") or []
+        wrapped_qs = "\n".join(
+            f"- {wrap_untrusted(q, tag='visitor_question')}" for q in sample_qs[:3]
+        )
         chat_block = (
             f"\nRecent visitor questions about this topic ({chat_signal['count']} in "
             f"the last 7 days):\n"
-            + "\n".join(f"- {q}" for q in sample_qs[:3])
-            + "\n\nUse these to weight which aspect of the consensus to lead with — "
-              "but do NOT answer the questions; only summarize the channel's stance.\n"
+            f"{wrapped_qs}\n\n"
+            "Use these to weight which aspect of the consensus to lead with — "
+            "but do NOT answer the questions; only summarize the channel's stance.\n"
         )
 
+    # Concept title and short_desc come from canonical_topics.json (operator-
+    # curated) so they are lower-risk, but escape defensively anyway.
     user_prompt = (
-        f"Concept: {title}\n"
-        f"Canonical description: {short_desc}\n\n"
+        f"Concept: {escape_for_prompt(title)}\n"
+        f"Canonical description: {escape_for_prompt(short_desc)}\n\n"
         f"Recent messages on this topic (oldest establishing first, then most-recent discussion):\n"
         f"{chr(10).join(quote_blocks)}\n\n"
         f"Anti-patterns flagged:\n"
@@ -332,17 +345,20 @@ def _summarize_person_one(path: Path, model: str, *, force: bool = False) -> tup
     name = person.get("display_name") or person.get("username")
     handle = person.get("username")
     total = person.get("total_messages", 0)
+    # display_name + username are Telegram-controlled by the user. Concept
+    # titles come from canonical_topics.json. Escape all of them — cheap, and
+    # avoids a hostile display name from breaking the prompt.
     kind_str = ", ".join(
-        f"{n} {k}"
+        f"{n} {escape_for_prompt(k)}"
         for k, n in sorted(by_kind.items(), key=lambda x: -x[1])[:6]
     )
     top_concepts_str = ", ".join(
-        f"{c['title']} ({c['msg_count']})" for c in concepts[:8]
+        f"{escape_for_prompt(c['title'])} ({c['msg_count']})" for c in concepts[:8]
     )
 
     user_prompt = (
-        f"Handle: @{handle}\n"
-        f"Display name: {name}\n"
+        f"Handle: @{escape_for_prompt(handle)}\n"
+        f"Display name: {escape_for_prompt(name)}\n"
         f"Total messages: {total}\n"
         f"Activity profile: {kind_str}\n"
         f"Top concepts contributed to: {top_concepts_str or '(none)'}\n\n"

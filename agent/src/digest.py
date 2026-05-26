@@ -23,6 +23,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from .config import REPO_ROOT, VAULT_DIR
+from .sanitize import escape_for_prompt, wrap_untrusted
 
 LOG = logging.getLogger("digest")
 
@@ -99,23 +100,27 @@ def _build_user_prompt(window_days: int) -> str | None:
 
     parts: list[str] = [f"Window: last {window_days} day(s).", ""]
 
+    # Concept titles are operator-curated; consensus_summary is LLM-generated
+    # but ultimately derived from message text, so escape it.
     if concepts:
         parts.append("Concepts that saw activity:")
         for c in concepts[:8]:
             cs = (c.get("consensus_summary") or "").strip()
             parts.append(
-                f"- {c.get('title')} (id={c['concept_id']}, "
+                f"- {escape_for_prompt(c.get('title'))} (id={escape_for_prompt(c['concept_id'])}, "
                 f"{c.get('atom_count', 0)} total messages, "
-                f"updated {_short_date(c.get('last_updated'))}): {cs[:280]}"
+                f"updated {_short_date(c.get('last_updated'))}): {escape_for_prompt(cs[:280])}"
             )
         parts.append("")
 
+    # Visitor questions are pure user input — wrap in delimiters so the model
+    # treats them as data, never as instructions.
     top_qs = (chat.get("top_questions") or [])[:5]
     if top_qs:
         parts.append("Recent questions visitors asked Bridg3 on the website:")
         for q in top_qs:
-            page = f" (on {q['current_page']})" if q.get("current_page") else ""
-            parts.append(f"- {q['question']}{page}")
+            page_attr = f" page={escape_for_prompt(q['current_page'])}" if q.get("current_page") else ""
+            parts.append(f"- {wrap_untrusted(q['question'], tag='visitor_question')}{page_attr}")
         parts.append("")
 
     parts.append(
