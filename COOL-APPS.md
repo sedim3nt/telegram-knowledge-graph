@@ -19,6 +19,8 @@ coverage grows over time.
 
 **Live:** https://safespace.spirittree.dev
 
+**Repo:** https://github.com/sedim3nt/SafeSpaceLite
+
 ---
 
 ## Clean Slate
@@ -36,6 +38,8 @@ and community features are post-MVP.
 
 **Live:** https://cleanslate.spirittree.dev
 
+**Repo:** https://github.com/sedim3nt/clean-slate
+
 ---
 
 ## MycoMaps ("Weedmaps for shrooms")
@@ -51,6 +55,8 @@ questions, grounded in the app's own data and wrapped in safety guardrails.
 AI chat all work.
 
 **Live:** https://mycomaps.spirittree.dev
+
+**Repo:** https://github.com/sedim3nt/shroommaps
 
 ---
 
@@ -68,6 +74,8 @@ while the chat handles free-form questions.
 
 **Live:** https://geolayers.spirittree.dev
 
+**Repo:** https://github.com/sedim3nt/geolayers-site
+
 ---
 
 ## Relational Layers
@@ -84,6 +92,8 @@ overrides it.
 **Status:** Live, ~85%.
 
 **Live:** https://relational.spirittree.dev
+
+**Repo:** https://github.com/sedim3nt/relational-layers-site
 
 ---
 
@@ -105,3 +115,35 @@ about your records and how to use the app (not medical advice).
 **Live:** https://health.spirittree.dev (web demo, dummy data only)
 
 **Repo:** https://github.com/sedim3nt/health-records
+
+---
+
+## Trading Research Agent  *(Claude Code agent · by Suede0619)*
+
+**What it is:** Multi-agent stock research that runs entirely inside Claude Code. A
+12-role analyst / bull-bear / trader debate produces a structured trading decision per
+ticker, plus an optional portfolio-monitoring layer that detects material changes and
+alerts you (email / push / SMS / macOS banner). A Claude Code build of the TauricResearch
+"TradingAgents" framework.
+
+**AI features:** The whole thing is agentic — parallel Claude Code subagents, no LLM API
+key, no separate orchestrator.
+
+**Status:** Active tool (~85%). Runs as `/trade-research <TICKER>` in Claude Code; no
+hosted URL.
+
+**Repo:** https://github.com/Suede0619/trading-research-agent
+
+---
+
+## LexStack  *(Claude Code agent · by Suede0619)*
+
+**What it is:** An agentic stack that runs a solo or small-firm legal practice end to end
+— finding clients, signing them, doing the legal work, billing, and building the
+reputation that brings the next client. The attorney stays the operator and final signer.
+
+**AI features:** Fully agentic, runs inside Claude Code; PRD-backed design.
+
+**Status:** Framework (~80%). Runs in Claude Code; no hosted URL.
+
+**Repo:** https://github.com/Suede0619/lexstack
