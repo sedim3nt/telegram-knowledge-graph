@@ -1,7 +1,8 @@
 # Cool apps that should be useful
 
-SpiritTree apps that each solve a real problem. Most are live and clickable; the newest
-(Health Records) ships a desktop app plus a web demo.
+SpiritTree apps that each solve a real problem. Most are live and clickable, and every
+one now has an AI chat you can use on its topic, powered by the local Claude CLI (Claude
+Max, no API keys).
 
 ---
 
@@ -26,8 +27,9 @@ coverage grows over time.
 (mood, cravings, gratitude), milestones, crisis resources, and a private journal.
 Anonymous by default.
 
-**AI features:** An AI recovery companion built into the journal that offers
-reflective, non-judgmental responses and prompts.
+**AI features:** An AI recovery companion in the journal, plus a floating recovery-support
+chat (local Claude CLI) with built-in crisis guardrails (988 / SAMHSA). Supportive, not a
+substitute for professional help.
 
 **Status:** Live, ~80%. Tracking, journal, and the AI companion all work; paid tiers
 and community features are post-MVP.
@@ -57,9 +59,10 @@ AI chat all work.
 **What it is:** A "what is the geology under me" lookup. Drop a point and get the
 surface rock units, a plain-language ground read, and curated regional stack stories.
 
-**AI features:** None by design. The ground-read narrative is generated
-deterministically from live Macrostrat geologic data, so it is accurate and
-reproducible rather than model-guessed.
+**AI features:** An "Ask the Geologist" chat (local Claude CLI) that answers questions
+about your local geology, grounded in the looked-up Macrostrat data. The core ground-read
+narrative stays deterministic (straight from Macrostrat), so the facts are reproducible
+while the chat handles free-form questions.
 
 **Status:** Live, ~85%. Live geology lookup, narrative, and regional stories work.
 
@@ -73,8 +76,10 @@ reproducible rather than model-guessed.
 direction, set a few readiness sliders, and get a clear, structured recommendation with
 guardrails and out-of-scope flags.
 
-**AI features:** None by design. It runs on a transparent, deterministic rules engine,
-so the same inputs always give the same answer (no black box).
+**AI features:** A "Talk it through" chat (local Claude CLI) that helps you reflect on the
+decision and interpret your result. The recommendation engine itself stays deterministic
+and transparent (same inputs always give the same answer); the chat supplements it, never
+overrides it.
 
 **Status:** Live, ~85%.
 
@@ -89,9 +94,10 @@ folder-scan medical records into a private local vault, organize them on a case-
 timeline, build shareable record packets, and track requests to providers. Your data
 stays on your own machine.
 
-**AI features:** Three, all Claude-powered: extract structured fields from a scanned or
-pasted record, summarize a patient's history in plain language, and auto-draft a
-records-request letter to a provider (citing your right of access).
+**AI features:** Four, all powered by the local Claude CLI: extract structured fields from
+a scanned/pasted record, summarize a history in plain language, auto-draft a
+records-request letter (citing your right of access), and a chat that answers questions
+about your records and how to use the app (not medical advice).
 
 **Status:** Desktop (Electron) alpha, plus a live browser web demo with fictional data
 (Riley Demo and Mochi the cat).
