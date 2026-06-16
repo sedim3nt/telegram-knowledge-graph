@@ -1,4 +1,4 @@
-# Sag3: an agent that turns a Telegram channel into a knowledge website
+# Conflu3nce: an agent that turns a Telegram channel into a knowledge website
 
 **What it is**
 
@@ -12,20 +12,20 @@ itself nightly.
 **What you'll see**
 
 - 🔗 **Live site:** https://clawryderz.spirittree.dev (gated; you'll be sent a username and password separately).
-- A floating 🐯 **"Ask Sag3"** chat panel on every page: ask a plain-English
+- A floating 🐯 **"Ask Conflu3nce"** chat panel on every page: ask a plain-English
   question and it answers *only* from the channel's vault.
 
 **How it's made** (the nightly pipeline)
 
 ```
 Telegram channel
-  → Sag3 (read-only poller; Telethon for one-time historical backfill)
+  → Conflu3nce (read-only poller; Telethon for one-time historical backfill)
   → Claude Haiku classifies each message (tags, entities, is-question, supersession)
   → Sonnet clusters ~1000 topic slugs into ~50 canonical concepts
   → chronological synthesis → versioned concept + people pages (Markdown vault)
   → Sonnet "where things stand" summaries (threshold-cached: ~0-3 calls/night)
   → Quartz 4 static site + Cloudflare Pages (cookie-auth middleware)
-  → Ask Sag3 Q&A (Opus, vault-grounded) via a local FastAPI server + cloudflared tunnel
+  → Ask Conflu3nce Q&A (Opus, vault-grounded) via a local FastAPI server + cloudflared tunnel
 ```
 
 Stack: a **Python** agent (orchestrated by macOS `launchd` cron), **Quartz 4** for the
