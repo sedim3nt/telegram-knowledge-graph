@@ -1,6 +1,7 @@
 # Cool apps that should be useful
 
-Five live SpiritTree apps that each solve a real problem. All deployed and clickable.
+SpiritTree apps that each solve a real problem. Most are live and clickable; the newest
+(Health Records) ships a desktop app plus a web demo.
 
 ---
 
@@ -81,6 +82,19 @@ so the same inputs always give the same answer (no black box).
 
 ---
 
-*Not yet built: a Medical Records app. It currently exists only as PRDs (a Personal
-Health Record Vault and a Pet Health Vault, plus a tech spec). A strong candidate to
-build next.*
+## Health Records Vault
+
+**What it is:** A local-first Personal Health Record + Pet Health Vault. Import or
+folder-scan medical records into a private local vault, organize them on a case-file
+timeline, build shareable record packets, and track requests to providers. Your data
+stays on your own machine.
+
+**AI features:** Three, all Claude-powered: extract structured fields from a scanned or
+pasted record, summarize a patient's history in plain language, and auto-draft a
+records-request letter to a provider (citing your right of access).
+
+**Status:** Desktop (Electron) alpha, plus a browser web demo with fictional data
+(Riley Demo and Mochi the cat) built and ready. The public demo link drops in here once
+it deploys.
+
+**Repo:** https://github.com/sedim3nt/health-records
