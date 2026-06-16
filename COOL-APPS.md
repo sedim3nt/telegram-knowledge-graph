@@ -93,8 +93,9 @@ stays on your own machine.
 pasted record, summarize a patient's history in plain language, and auto-draft a
 records-request letter to a provider (citing your right of access).
 
-**Status:** Desktop (Electron) alpha, plus a browser web demo with fictional data
-(Riley Demo and Mochi the cat) built and ready. The public demo link drops in here once
-it deploys.
+**Status:** Desktop (Electron) alpha, plus a live browser web demo with fictional data
+(Riley Demo and Mochi the cat).
+
+**Live:** https://health.spirittree.dev (web demo, dummy data only)
 
 **Repo:** https://github.com/sedim3nt/health-records
