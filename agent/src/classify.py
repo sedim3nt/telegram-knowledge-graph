@@ -40,6 +40,7 @@ from pydantic import BaseModel, Field, ValidationError
 
 from .atomic import ATOMIC_DIR
 from .config import DATA_DIR
+from .sanitize import escape_for_prompt, wrap_untrusted
 
 LOG = logging.getLogger("classify")
 CLASSIFY_DIR = DATA_DIR / "classify"
@@ -218,11 +219,15 @@ def _build_user_prompt(atomic: dict) -> str:
     date = atomic.get("date_iso") or "unknown"
     media_note = ""
     if atomic.get("media_kind"):
-        media_note = f"\nMessage contains media of kind: {atomic['media_kind']}"
+        media_note = f"\nMessage contains media of kind: {escape_for_prompt(atomic['media_kind'])}"
+    # Author + date are channel-provided but still user-influenceable — escape them.
+    # The message body is the high-risk surface; wrap_untrusted enforces the
+    # <message>...</message> boundary by escaping any closing tag the payload tries
+    # to inject, so the system prompt's PROMPT-INJECTION RULE retains its referent.
     return (
-        f"Author: {author}\n"
-        f"Date: {date}{media_note}\n"
-        f"<message>\n{text or '(empty)'}\n</message>"
+        f"Author: {escape_for_prompt(author)}\n"
+        f"Date: {escape_for_prompt(date)}{media_note}\n"
+        f"{wrap_untrusted(text or '(empty)', tag='message')}"
     )
 
 

@@ -28,6 +28,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from .config import LOGS_DIR, REPO_ROOT, VAULT_DIR
+from .sanitize import escape_for_prompt, wrap_untrusted
 
 LOG = logging.getLogger("ask")
 
@@ -121,24 +122,37 @@ def _build_user_prompt(
     Order matters for prompt caching: the vault bundle is constant within a day,
     so we put it first as a stable prefix. Per-request bits (history, question)
     come after.
+
+    Prompt-injection safety: the vault bundle is LLM-derived from raw message
+    text, and the current_page / history / question are all client-controlled.
+    All three are wrapped in clearly-named delimiters and have their angle
+    brackets escaped so a payload containing tag-shaped sequences cannot break
+    out of the boundary or impersonate a system message.
     """
     parts: list[str] = []
     if vault_bundle:
         parts.append("=== VAULT (your only source of truth) ===")
-        parts.append(vault_bundle)
+        # The vault bundle is JSON serialized from concept + person records.
+        # Snippets of raw message text appear inside; escape the lot.
+        parts.append(escape_for_prompt(vault_bundle))
         parts.append("=== END VAULT ===")
         parts.append("")
     if current_page:
-        parts.append(f"The user is currently looking at: {current_page}")
+        parts.append(
+            "The user is currently looking at: "
+            f"{wrap_untrusted(current_page, tag='current_page')}"
+        )
         parts.append("")
     if history:
         parts.append("=== Conversation so far ===")
         for turn in history[-MAX_HISTORY_TURNS:]:
             label = "User" if turn.role == "user" else "Bridg3"
-            parts.append(f"{label}: {turn.content}")
+            parts.append(
+                f"{label}: {wrap_untrusted(turn.content, tag='conversation_turn', role=label)}"
+            )
         parts.append("=== End conversation ===")
         parts.append("")
-    parts.append(f"User: {question}")
+    parts.append(f"User: {wrap_untrusted(question, tag='user_question')}")
     parts.append("Bridg3:")
     return "\n".join(parts)
 
